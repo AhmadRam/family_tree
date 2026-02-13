@@ -1,0 +1,462 @@
+﻿<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>شجرة عائلة صكار</title>
+  <style>
+    :root {
+      --bg: #f6f1e9;
+      --ink: #1f1a15;
+      --muted: #6b5a4a;
+      --card: #fffaf2;
+      --stroke: #d6c7b6;
+      --line: #c7b49e;
+      --accent: #7c3f1a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Cairo", "Segoe UI", Tahoma, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at 85% -10%, #ffe6c8 0%, rgba(255, 230, 200, 0.2) 60%, transparent 70%),
+        radial-gradient(800px 500px at 10% 20%, #dbe7ff 0%, rgba(219, 231, 255, 0.2) 60%, transparent 70%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 26px 18px 8px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(24px, 3vw, 34px);
+    }
+    .subtitle {
+      margin: 0 auto 10px;
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 720px;
+    }
+
+    .tree-wrap {
+      padding: 16px 18px 30px;
+      overflow-x: auto;
+      overflow-y: visible;
+      direction: rtl;
+    }
+
+    /* Collapsible branching tree */
+    .tree {
+      list-style: none;
+      margin: 0;
+      padding: 20px 10px;
+      display: flex;
+      justify-content: center;
+      direction: ltr;
+      flex-direction: row-reverse;
+    }
+    .tree ul {
+      list-style: none;
+      margin: 0;
+      padding: 26px 10px 0;
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      position: relative;
+      direction: ltr;
+      flex-direction: row-reverse;
+    }
+    .tree li {
+      position: relative;
+      text-align: center;
+      padding: 24px 10px 0;
+      min-width: 170px;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .tree li::before,
+    .tree li::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 50%;
+      width: 60%;
+      height: 24px;
+      border-top: 2px solid var(--line);
+    }
+    .tree li::after {
+      right: auto;
+      left: 50%;
+      border-left: 2px solid var(--line);
+      width: 50%;
+    }
+    .tree li:only-child::before,
+    .tree li:only-child::after {
+      display: none;
+    }
+    .tree li:only-child { padding-top: 0; }
+    .tree.flow-rtl li:first-child::after { border: 0; }
+    .tree.flow-rtl li:last-child::before { border: 0; }
+    .tree ul::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      height: 24px;
+      border-left: 2px solid var(--line);
+    }
+    .tree li > ul { margin-top: 4px; }
+
+    .node {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 16px;
+      padding: 12px 14px;
+      min-width: 150px;
+      box-shadow: 0 8px 16px rgba(31, 26, 21, 0.08);
+      cursor: pointer;
+      transition: 0.2s ease;
+      position: relative;
+    }
+    .node:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .node .name { font-size: 13px; line-height: 1.5; direction: rtl; text-align: center; }
+    .node .count {
+      font-size: 11px;
+      color: var(--muted);
+      background: #f1e7db;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .has-children > .node::after {
+      content: "";
+      position: absolute;
+      bottom: -24px;
+      left: 50%;
+      height: 24px;
+      border-left: 2px solid var(--line);
+    }
+    .tree li:not(.root) > .node::before {
+      content: "";
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      height: 24px;
+      border-left: 2px solid var(--line);
+    }
+    .collapsed > ul { display: none; }
+    .collapsed > .node::after { display: none; }
+    .collapsed > .node .count { background: #ead8c6; }
+
+    footer {
+      text-align: center;
+      padding: 8px 0 24px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>شجرة عائلة صكار</h1>
+    <p class="subtitle">اضغط على أي نود لفتح أولاده أو إخفائهم.</p>
+  </header>
+
+  <div class="tree-wrap" id="treeWrap"></div>
+
+  <footer>يمكن تعديل البيانات من داخل الكود بسهولة.</footer>
+
+  <script>
+    const family = {
+      id: "root",
+      name: "صكار رمضان احمد عزالدين حسين الدرويش",
+      children: [
+        {
+          id: "sakan",
+          name: "ساكن صكار السيد رمضان الأحمد",
+          children: []
+        },
+        {
+          id: "ismail",
+          name: "اسماعيل صكار السيد رمضان الأحمد",
+          children: [
+            {
+              id: "taisir",
+              name: "تيسير اسماعيل صكار السيد رمضان الأحمد",
+              children: [
+                {
+                  id: "hazem",
+                  name: "حازم تيسير اسماعيل صكار السيد رمضان الأحمد",
+                  children: [
+                    { id: "ibrahim-hazem", name: "إبراهيم حازم تيسير اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                    { id: "mohammed-saeed", name: "محمد سعيد حازم تيسير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                  ]
+                },
+                {
+                  id: "abdullah-taisir",
+                  name: "عبدالله تيسير اسماعيل صكار السيد رمضان الأحمد",
+                  children: [
+                    { id: "owais", name: "أويس عبدالله تيسير اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                    { id: "ghaith", name: "غيث عبدالله تيسير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                  ]
+                },
+                { id: "mohammed-taisir", name: "محمد تيسير اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                { id: "baraa", name: "براء تيسير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+              ]
+            },
+            {
+              id: "tahseen",
+              name: "تحسين اسماعيل صكار السيد رمضان الأحمد",
+              children: [
+                { id: "mohammed-tahseen", name: "محمد تحسين اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                {
+                  id: "bilal",
+                  name: "بلال تحسين اسماعيل صكار السيد رمضان الأحمد",
+                  children: [
+                    { id: "mayar", name: "ميار بلال تحسين اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                  ]
+                },
+                {
+                  id: "anas",
+                  name: "أنس تحسين اسماعيل صكار السيد رمضان الأحمد",
+                  children: [
+                    { id: "hamza-anas", name: "حمزة أنس تحسين اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                    { id: "yaman-anas", name: "يمان أنس تحسين اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                  ]
+                },
+                { id: "ibrahim-tahseen", name: "إبراهيم تحسين اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                { id: "yahia", name: "يحيى تحسين اسماعيل صكار السيد رمضان الأحمد", children: [] }
+              ]
+            },
+            {
+              id: "tahreer",
+              name: "تحرير اسماعيل صكار السيد رمضان الأحمد",
+              children: [
+                { id: "ismail-tahreer", name: "إسماعيل تحرير اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "taha", name: "طه إسماعيل تحرير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "ahmed-tahreer", name: "احمد تحرير اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "taim", name: "تيم أحمد تحرير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "mohammed-amin", name: "محمد أمين تحرير اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "karam", name: "كرم محمد امين تحرير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "imran", name: "عمران تحرير اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "saleh", name: "صالح عمران تحرير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "reda", name: "رضا تحرير اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "zaid-reda", name: "زيد رضا تحرير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "issa", name: "عيسى تحرير اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                { id: "mahmoud-tahreer", name: "محمود تحرير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+              ]
+            },
+            {
+              id: "shaheer",
+              name: "شهير اسماعيل صكار السيد رمضان الأحمد",
+              children: [
+                { id: "mohammed-ammar", name: "محمد عمار شهير اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "mostafa", name: "مصطفى محمد عمار شهير اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                  { id: "zakaria", name: "زكريا محمد عمار شهير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "zain", name: "زين العابدين شهير اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "alaa", name: "علاء زين العابدين شهير اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                  { id: "yusuf", name: "يوسف زين العابدين شهير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "ibrahim-shaheer", name: "إبراهيم شهير اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "qais", name: "قيس إبراهيم شهير اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                  { id: "mohammed-ibrahim", name: "محمد إبراهيم شهير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "abdulrahman", name: "عبدالرحمن شهير اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "yazan", name: "يزن عبدالرحمن شهير اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] }
+              ]
+            },
+            {
+              id: "nabil",
+              name: "نبيل اسماعيل صكار السيد رمضان الأحمد",
+              children: [
+                { id: "abi", name: "أبي نبيل اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                { id: "ahmed-nabil", name: "أحمد نبيل اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "murad", name: "مراد أحمد نبيل اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "ayman", name: "أيمن نبيل اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                { id: "abdulkarim", name: "عبدالكريم نبيل اسماعيل صكار السيد رمضان الأحمد", children: [] }
+              ]
+            },
+            {
+              id: "abdulkader",
+              name: "عبدالقادر اسماعيل صكار السيد رمضان الأحمد",
+              children: [
+                { id: "mohammed-khair", name: "محمد خيرعبدالقادر اسماعيل صكار السيد رمضان الأحمد", children: [
+                  { id: "abdulkader-mk", name: "عبدالقادر محمد خيرعبدالقادر اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                  { id: "kenan", name: "كنان محمد خيرعبدالقادر اسماعيل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "naseem", name: "نسيم عبدالقادر اسماعيل صكار السيد رمضان الأحمد", children: [] },
+                { id: "ahmed-abdulkader", name: "أحمد عبدالقادر اسماعيل صكار السيد رمضان الأحمد", children: [] }
+              ]
+            }
+          ]
+        },
+        {
+          id: "khalil",
+          name: "خليل صكار السيد رمضان الأحمد",
+          children: [
+            {
+              id: "maher",
+              name: "ماهر خليل صكار السيد رمضان الأحمد",
+              children: [
+                { id: "omar", name: "عمر ماهر خليل صكار السيد رمضان الأحمد", children: [
+                  { id: "saqar", name: "صقار عمر ماهر خليل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "othman", name: "عثمان ماهر خليل صكار السيد رمضان الأحمد", children: [
+                  { id: "ahmed-othman", name: "أحمد عثمان ماهر خليل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "abdulrahman-maher", name: "عبدالرحمن ماهر خليل صكار السيد رمضان الأحمد", children: [] },
+                { id: "abdulkader-maher", name: "عبدالقادر ماهر خليل صكار السيد رمضان الأحمد", children: [] },
+                { id: "mohammed-maher", name: "محمد ماهر خليل صكار السيد رمضان الأحمد", children: [
+                  { id: "maher-mohammed", name: "ماهر محمد ماهر خليل صكار السيد رمضان الأحمد", children: [] },
+                  { id: "zaid-mohammed", name: "زيد محمد ماهر خليل صكار السيد رمضان الأحمد", children: [] }
+                ] },
+                { id: "abdulilah", name: "عبدالإله ماهر خليل صكار السيد رمضان الأحمد", children: [] }
+              ]
+            },
+            { id: "mohammed-khalil", name: "محمد خليل صكار السيد رمضان الأحمد", children: [
+              { id: "mahmoud-mohammed", name: "محمود محمد خليل صكار السيد رمضان الأحمد", children: [] }
+            ] },
+            {
+              id: "hamed",
+              name: "حامد خليل صكار السيد رمضان الأحمد",
+              children: [
+                { id: "khalil-hamed", name: "خليل حامد خليل صكار السيد رمضان الأحمد", children: [] },
+                { id: "ibrahim-khalil", name: "ابراهيم خليل حامد خليل صكار السيد رمضان الأحمد", children: [] },
+                { id: "adam-khalil", name: "ادم خليل حامد خليل صكار السيد رمضان الأحمد", children: [] },
+                { id: "sadiq-hamed", name: "صديق حامد خليل صكار السيد رمضان الأحمد", children: [] },
+                { id: "mohammed-hamed", name: "محمد حامد خليل صكار السيد رمضان الأحمد", children: [] }
+              ]
+            },
+            { id: "anas-khalil", name: "أنس خليل صكار السيد رمضان الأحمد", children: [] }
+          ]
+        },
+        {
+          id: "sadiq",
+          name: "صديق صكار السيد رمضان الأحمد",
+          children: [
+            {
+              id: "mohammed-sadiq",
+              name: "محمد صديق صكار السيد رمضان الأحمد",
+              children: [
+                { id: "sadiq-mohammed", name: "صديق محمد صديق صكار السيد رمضان الأحمد", children: [] },
+                { id: "ahmed-mohammed", name: "أحمد محمد صديق صكار السيد رمضان الأحمد", children: [] },
+                { id: "qusai", name: "قصي محمد صديق صكار السيد رمضان الأحمد", children: [] },
+                { id: "mohammed-noor-mhd", name: "محمد نور محمد صديق صكار السيد رمضان الأحمد", children: [] }
+              ]
+            },
+            {
+              id: "abdullah-sadiq",
+              name: "عبدالله صديق صكار السيد رمضان الأحمد",
+              children: [
+                { id: "husam", name: "حسام الدين عبدالله صديق صكار السيد رمضان الأحمد", children: [] },
+                { id: "mohammed-abdullah", name: "محمد عبدالله صديق صكار السيد رمضان الأحمد", children: [] },
+                { id: "hamza-abdullah", name: "حمزة عبدالله صديق صكار السيد رمضان الأحمد", children: [] },
+                { id: "zaid-abdullah", name: "زيد عبدالله صديق صكار السيد رمضان الأحمد", children: [] }
+              ]
+            },
+            {
+              id: "omar-sadiq",
+              name: "عمر صديق صكار السيد رمضان الأحمد",
+              children: [
+                { id: "yaman-omar", name: "يمان عمر صديق صكار السيد رمضان الأحمد", children: [] },
+                { id: "abdulrahman-omar", name: "عبدالرحمن عمر صديق صكار السيد رمضان الأحمد", children: [] },
+                { id: "ahmed-omar", name: "أحمد عمر صديق صكار السيد رمضان الأحمد", children: [] }
+              ]
+            },
+            { id: "othman-sadiq", name: "عثمان صديق صكار السيد رمضان الأحمد", children: [
+              { id: "mohammed-nour", name: "محمد نور عثمان صديق صكار السيد رمضان الأحمد", children: [] }
+            ] },
+            { id: "ali-sadiq", name: "علي صديق صكار السيد رمضان الأحمد", children: [
+              { id: "mohammed-mazen", name: "محمد مازن علي صديق صكار السيد رمضان الأحمد", children: [] }
+            ] }
+          ]
+        }
+      ]
+    };
+
+    const treeWrap = document.getElementById("treeWrap");
+
+    function countChildren(node) {
+      return (node.children || []).length;
+    }
+
+    function normalizeSpaces(text) {
+      return text.trim().replace(/\s+/g, " ");
+    }
+
+    function shortName(full, parentFull = "", isRoot = false, depth = 0) {
+      const cleanFull = normalizeSpaces(full);
+      if (isRoot) return cleanFull;
+      if (depth === 1) return cleanFull.split(" ")[0];
+
+      const cleanParent = normalizeSpaces(parentFull);
+      if (cleanParent && cleanFull.endsWith(cleanParent)) {
+        const trimmed = cleanFull.slice(0, cleanFull.length - cleanParent.length).trim();
+        return trimmed || cleanFull;
+      }
+
+      return cleanFull;
+    }
+
+    function renderTree(node) {
+      const ul = document.createElement("ul");
+      ul.className = "tree flow-rtl";
+
+      function renderNode(n, parentUl, isRoot = false, parentName = "", depth = 0) {
+        const li = document.createElement("li");
+        if (isRoot) {
+          li.classList.add("root");
+        } else {
+          li.classList.add("collapsed");
+        }
+
+        const card = document.createElement("div");
+        card.className = "node";
+        card.innerHTML = `
+          <div class="name">${shortName(n.name, parentName, isRoot, depth)}</div>
+          <div class="count">${countChildren(n)} أبناء</div>
+        `;
+
+        card.addEventListener("click", (e) => {
+          e.stopPropagation();
+          li.classList.toggle("collapsed");
+        });
+
+        li.appendChild(card);
+        parentUl.appendChild(li);
+
+        if (n.children && n.children.length) {
+          li.classList.add("has-children");
+          const childUl = document.createElement("ul");
+          n.children.forEach(child => renderNode(child, childUl, false, n.name, depth + 1));
+          li.appendChild(childUl);
+        }
+      }
+
+      renderNode(node, ul, true, "", 0);
+      return ul;
+    }
+
+    treeWrap.appendChild(renderTree(family));
+  </script>
+</body>
+</html>
