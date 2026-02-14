@@ -48,6 +48,48 @@
       max-width: 720px;
     }
 
+    .view-switch {
+      display: inline-flex;
+      gap: 8px;
+      margin-top: 6px;
+      background: #efe4d5;
+      border: 1px solid var(--stroke);
+      border-radius: 999px;
+      padding: 4px;
+    }
+
+    .switch-btn {
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      padding: 7px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .switch-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .pdf-btn {
+      margin-top: 10px;
+      border: 1px solid var(--stroke);
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
     .tree-wrap {
       padding: 16px 18px 30px;
       overflow-x: auto;
@@ -208,6 +250,115 @@
       background: #ead8c6;
     }
 
+    .list-wrap {
+      padding: 16px 18px 30px;
+      direction: rtl;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .classic-panel {
+      background: #fffaf2;
+      border: 1px solid var(--stroke);
+      border-radius: 18px;
+      box-shadow: 0 12px 30px rgba(24, 17, 12, 0.12);
+      padding: 14px;
+    }
+
+    .classic-path {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .classic-path li {
+      background: #f1e7db;
+      color: var(--muted);
+      border: 1px solid var(--stroke);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .classic-current {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .classic-current .name {
+      font-size: 18px;
+      line-height: 1.5;
+      direction: rtl;
+    }
+
+    .classic-current .count {
+      font-size: 12px;
+      color: var(--muted);
+      background: #f1e7db;
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .classic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+    }
+
+    .classic-card {
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor: pointer;
+      position: relative;
+      min-height: 68px;
+      transition: 0.2s ease;
+    }
+
+    .classic-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .classic-card .name {
+      direction: rtl;
+      line-height: 1.5;
+      padding-left: 64px;
+    }
+
+    .classic-card .count {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      background: #f1e7db;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .classic-empty {
+      color: var(--muted);
+      background: #fff;
+      border: 1px dashed var(--stroke);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
     footer {
       text-align: center;
       padding: 8px 0 24px;
@@ -221,9 +372,17 @@
   <header>
     <h1>شجرة عائلة صكار</h1>
     <p class="subtitle">اضغط على أي نود لفتح أولاده أو إخفائهم.</p>
+    <div class="view-switch">
+      <button class="switch-btn active" id="treeViewBtn" type="button">عرض كشجرة</button>
+      <button class="switch-btn" id="listViewBtn" type="button">عرض كلاسيكي</button>
+    </div>
+    <div>
+      <button class="pdf-btn" id="pdfBtn" type="button">تحميل الشجرة PDF</button>
+    </div>
   </header>
 
   <div class="tree-wrap" id="treeWrap"></div>
+  <div class="list-wrap hidden" id="listWrap"></div>
 
   <footer>Designed and Developed by Eng. Ahmad Nabil Alsaid Ramadan © 2026</footer>
 
@@ -481,6 +640,10 @@
     };
 
     const treeWrap = document.getElementById("treeWrap");
+    const listWrap = document.getElementById("listWrap");
+    const treeViewBtn = document.getElementById("treeViewBtn");
+    const listViewBtn = document.getElementById("listViewBtn");
+    const pdfBtn = document.getElementById("pdfBtn");
 
     function countChildren(node) {
       return (node.children || []).length;
@@ -543,7 +706,294 @@
       return ul;
     }
 
+    let classicPath = [family];
+
+    function renderClassic() {
+      const current = classicPath[classicPath.length - 1];
+      const depth = classicPath.length - 1;
+      const parentName = depth > 0 ? classicPath[depth - 1].name : "";
+
+      const panel = document.createElement("div");
+      panel.className = "classic-panel";
+
+      const path = document.createElement("ul");
+      path.className = "classic-path";
+      classicPath.forEach((node, index) => {
+        const item = document.createElement("li");
+        const isRoot = index === 0;
+        const grandParent = index > 0 ? classicPath[index - 1].name : "";
+        item.textContent = shortName(node.name, grandParent, isRoot, index);
+        item.addEventListener("click", () => {
+          classicPath = classicPath.slice(0, index + 1);
+          redrawClassic();
+        });
+        path.appendChild(item);
+      });
+
+      const currentCard = document.createElement("div");
+      currentCard.className = "classic-current";
+      currentCard.innerHTML = `
+        <div class="name">${shortName(current.name, parentName, depth === 0, depth)}</div>
+        <div class="count">${countChildren(current)} أبناء</div>
+      `;
+
+      const grid = document.createElement("div");
+      grid.className = "classic-grid";
+      if (current.children && current.children.length) {
+        current.children.forEach(child => {
+          const card = document.createElement("div");
+          card.className = "classic-card";
+          card.innerHTML = `
+            <div class="name">${shortName(child.name, current.name, false, depth + 1)}</div>
+            <div class="count">${countChildren(child)} أبناء</div>
+          `;
+          card.addEventListener("click", () => {
+            classicPath.push(child);
+            redrawClassic();
+          });
+          grid.appendChild(card);
+        });
+      } else {
+        const empty = document.createElement("div");
+        empty.className = "classic-empty";
+        empty.textContent = "لا يوجد أبناء لهذا الفرع";
+        grid.appendChild(empty);
+      }
+
+      panel.appendChild(path);
+      panel.appendChild(currentCard);
+      panel.appendChild(grid);
+      return panel;
+    }
+
+    function redrawClassic() {
+      listWrap.innerHTML = "";
+      listWrap.appendChild(renderClassic());
+    }
+
+    function setView(mode) {
+      const showTree = mode === "tree";
+      treeWrap.classList.toggle("hidden", !showTree);
+      listWrap.classList.toggle("hidden", showTree);
+      treeViewBtn.classList.toggle("active", showTree);
+      listViewBtn.classList.toggle("active", !showTree);
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function collectPdfPages(node, parentName = "", depth = 0, pages = []) {
+      if (node.children && node.children.length) {
+        pages.push({ node, parentName, depth });
+      }
+      (node.children || []).forEach((child) => collectPdfPages(child, node.name, depth + 1, pages));
+      return pages;
+    }
+
+    function renderPdfPage({ node, parentName, depth }) {
+      const title = normalizeSpaces(node.name);
+      const children = node.children || [];
+      const childrenHtml = children.map((child) => `
+        <div class="child"><div class="node" data-child>${escapeHtml(shortName(child.name, node.name, false, depth + 1))}</div></div>
+      `).join("");
+
+      return `
+        <section class="page">
+          <div class="tree" data-tree>
+            <svg class="wires" data-wires></svg>
+            <div class="node parent" data-parent>${escapeHtml(title)}</div>
+            <div class="children" data-children>
+              ${childrenHtml}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function exportTreePdf() {
+      const pages = collectPdfPages(family);
+      if (!pages.length) {
+        alert("لا توجد بيانات للتصدير.");
+        return;
+      }
+
+      const popup = window.open("", "_blank");
+      if (!popup) {
+        alert("المتصفح منع فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة ثم أعد المحاولة.");
+        return;
+      }
+
+      popup.document.write(`
+        <!doctype html>
+        <html lang="ar" dir="rtl">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width,initial-scale=1" />
+          <title>شجرة عائلة صكار - PDF</title>
+          <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&display=swap" rel="stylesheet">
+          <style>
+            @page { size: A3 landscape; margin: 20mm; }
+            body{
+              font-family: "Cairo", sans-serif;
+              margin:0;
+              background:#fff;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .page{
+              page-break-after: always;
+              min-height: calc(297mm - 40mm);
+              display:flex;
+              justify-content:center;
+              align-items:center;
+              padding: 0;
+            }
+            .tree{
+              position: relative;
+              width: 100%;
+              max-width: 1200px;
+              display:flex;
+              flex-direction:column;
+              align-items:center;
+              gap: 60px;
+            }
+            .wires{
+              position:absolute;
+              inset:0;
+              width:100%;
+              height:100%;
+              pointer-events:none;
+              overflow:visible;
+            }
+            .node{
+              background:#8c2c8c;
+              color:#fff;
+              padding:18px 46px;
+              border-radius:28px;
+              font-size:32px;
+              font-weight:700;
+              display:inline-block;
+              min-width:240px;
+              text-align:center;
+              box-sizing:border-box;
+              writing-mode: horizontal-tb;
+            }
+            .parent{
+              background:#6f806f;
+              font-size:44px;
+              padding:26px 74px;
+              min-width: 0;
+              max-width: 95%;
+              white-space: normal;
+              line-height: 1.3;
+            }
+            .children{
+              display:flex;
+              gap: 70px;
+              justify-content:center;
+              align-items:flex-start;
+              flex-wrap: wrap;
+              max-width: 100%;
+            }
+            .child{ display:flex; justify-content:center; }
+            @media print {
+              html, body { width: 420mm; }
+              .page { break-after: page; }
+            }
+          </style>
+        </head>
+        <body>
+          ${pages.map(renderPdfPage).join("")}
+          <script>
+            function clear(svg){
+              while(svg.firstChild) svg.removeChild(svg.firstChild);
+            }
+            function line(svg, x1, y1, x2, y2){
+              const l = document.createElementNS("http://www.w3.org/2000/svg","line");
+              l.setAttribute("x1", x1);
+              l.setAttribute("y1", y1);
+              l.setAttribute("x2", x2);
+              l.setAttribute("y2", y2);
+              l.setAttribute("stroke", "#b3b3b3");
+              l.setAttribute("stroke-width", "2");
+              l.setAttribute("shape-rendering", "geometricPrecision");
+              svg.appendChild(l);
+            }
+            function drawTree(tree){
+              const parent = tree.querySelector("[data-parent]");
+              const kids   = [...tree.querySelectorAll("[data-child]")];
+              const svg    = tree.querySelector("[data-wires]");
+              if(!parent || kids.length === 0 || !svg) return;
+              const rTree = tree.getBoundingClientRect();
+              svg.setAttribute("viewBox", "0 0 " + rTree.width + " " + rTree.height);
+              svg.setAttribute("width", rTree.width);
+              svg.setAttribute("height", rTree.height);
+              clear(svg);
+              const rP = parent.getBoundingClientRect();
+              const pCx = (rP.left - rTree.left) + rP.width/2;
+              const pBottom = (rP.bottom - rTree.top);
+              const kidTops = kids.map(k => {
+                const r = k.getBoundingClientRect();
+                return { cx: (r.left - rTree.left) + r.width/2, top: (r.top - rTree.top) };
+              });
+
+              // دعم التفاف الأطفال على أكثر من سطر مع وصلات صحيحة لكل سطر
+              const rows = [];
+              const tolerance = 8;
+              kidTops.forEach((pt) => {
+                const row = rows.find((r) => Math.abs(r.top - pt.top) <= tolerance);
+                if (row) row.items.push(pt);
+                else rows.push({ top: pt.top, items: [pt] });
+              });
+              rows.sort((a, b) => a.top - b.top);
+
+              const firstJunctionY = pBottom + 45;
+              line(svg, pCx, pBottom, pCx, firstJunctionY);
+
+              rows.forEach((row, index) => {
+                const rowJunctionY = row.top - 12;
+                const xs = row.items.map((p) => p.cx).sort((a, b) => a - b);
+
+                const prevY = index === 0 ? firstJunctionY : (rows[index - 1].top + 32);
+                line(svg, pCx, prevY, pCx, rowJunctionY);
+
+                if (xs.length > 1) {
+                  line(svg, xs[0], rowJunctionY, xs[xs.length - 1], rowJunctionY);
+                }
+
+                row.items.forEach((pt) => line(svg, pt.cx, rowJunctionY, pt.cx, pt.top));
+              });
+            }
+            function drawAll(){
+              document.querySelectorAll("[data-tree]").forEach(drawTree);
+            }
+            window.addEventListener("load", () => setTimeout(drawAll, 80));
+            window.addEventListener("resize", drawAll);
+            window.onbeforeprint = () => drawAll();
+            window.onafterprint  = () => drawAll();
+          <\/script>
+        </body>
+        </html>
+      `);
+
+      popup.document.close();
+      popup.focus();
+      popup.onload = () => popup.print();
+    }
+
     treeWrap.appendChild(renderTree(family));
+    redrawClassic();
+
+    treeViewBtn.addEventListener("click", () => setView("tree"));
+    listViewBtn.addEventListener("click", () => setView("list"));
+    pdfBtn.addEventListener("click", exportTreePdf);
+    setView("tree");
   </script>
 </body>
 
